@@ -12,3 +12,4 @@ aiohttp
 mss
 pytesseract
 pillow
+pyautogui

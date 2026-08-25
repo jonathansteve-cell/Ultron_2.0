@@ -2,7 +2,7 @@ import os
 from pathlib import Path
 from fastapi import FastAPI
 from fastapi.responses import HTMLResponse, JSONResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from dotenv import load_dotenv
 from llm.client import call_llm
 from llm.prompts import ULTRON_SYSTEM_PROMPT
@@ -12,10 +12,16 @@ from tools.files import create_folder
 from tools.browser import search_web
 from tools.design import create_design_project, organize_assets, suggest_palette_from_names, analyze_design_context, DESIGN_TEMPLATES
 from tools.screen_vision import describe_screen
+from core.agent import plan_for, respond, ACTIONS
+from tools.desktop import move_mouse, click_mouse, type_text, press_hotkey
 
 load_dotenv("config/.env")
 app = FastAPI(title="Ultron AI — Complete Build")
 class ChatRequest(BaseModel): message: str
+class AgentAction(BaseModel):
+    action: str
+    parameters: dict = Field(default_factory=dict)
+    confirmed: bool = False
 
 def page(name): return HTMLResponse((Path(__file__).parent / name).read_text(encoding="utf-8"))
 @app.get("/")
@@ -26,7 +32,35 @@ async def orb(): return page("orb_ui.html")
 async def pwa_manifest():
     return JSONResponse({"name":"Ultron Designer","short_name":"Ultron","start_url":"/orb","display":"standalone","background_color":"#05080d","theme_color":"#1f6feb","icons":[]})
 @app.get("/health")
-async def health(): return {"status":"ok"}
+async def health(): return {"status":"ok", "features": ["chat", "voice", "hands", "screen_ocr", "safe_agent"]}
+
+@app.post("/agent/plan")
+async def agent_plan(req: ChatRequest):
+    """Return a transparent plan; no computer action is performed here."""
+    return plan_for(req.message)
+
+@app.post("/agent/respond")
+async def agent_respond(req: ChatRequest):
+    return {"reply": respond(req.message)}
+
+@app.post("/agent/execute")
+async def agent_execute(req: AgentAction):
+    """Execute one allow-listed desktop action after explicit confirmation."""
+    if req.action not in ACTIONS:
+        return JSONResponse({"error": "Action is not allow-listed"}, status_code=400)
+    if ACTIONS[req.action].get("requires_confirmation") and not req.confirmed:
+        return JSONResponse({"error": "Explicit confirmation is required", "action": req.action}, status_code=403)
+    p = req.parameters
+    try:
+        if req.action == "click": result = click_mouse(p["x"], p["y"], p.get("button", "left"))
+        elif req.action == "type": result = type_text(p["text"])
+        elif req.action == "hotkey": result = press_hotkey(p["combo"])
+        elif req.action == "describe_screen": result = {"text": describe_screen()}
+        else: return JSONResponse({"error": "This action is planned but not directly executable here"}, status_code=501)
+        return {"ok": True, "result": result}
+    except (KeyError, ValueError, RuntimeError) as exc:
+        return JSONResponse({"error": str(exc)}, status_code=400)
+
 @app.get("/vision/describe")
 async def vision_describe():
     try:
