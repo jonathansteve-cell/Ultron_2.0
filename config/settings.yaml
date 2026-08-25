@@ -1,0 +1,13 @@
+assistant:
+  name: Ultron
+  mode: text
+vision:
+  holo_marker: true
+  marker_color: red
+projector:
+  enabled: true
+  width: 1280
+  height: 720
+logging:
+  level: INFO
+  file: logs/ultron.log
