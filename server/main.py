@@ -25,7 +25,9 @@ class AgentAction(BaseModel):
 
 def page(name): return HTMLResponse((Path(__file__).parent / name).read_text(encoding="utf-8"))
 @app.get("/")
-async def root(): return page("chat_ui.html")
+async def root(): return page("orb_ui.html")
+@app.get("/chat")
+async def chat_page(): return page("chat_ui.html")
 @app.get("/orb")
 async def orb(): return page("orb_ui.html")
 @app.get("/pwa")

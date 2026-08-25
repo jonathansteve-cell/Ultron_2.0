@@ -13,7 +13,7 @@ cp config/sample.env config/.env   # Windows: copy config\\sample.env config\\.e
 uvicorn server.main:app --host 0.0.0.0 --port 8000
 ```
 
-Open `http://localhost:8000/` for chat or `/orb` for the orb. The browser uses relative API URLs, so it also works through a LAN or hosted preview. Without a provider key, chat uses a local mock response. Screen vision and projector demos need a machine with the relevant camera/display permissions.
+Open `http://localhost:8000/` for the auto-starting voice orb. It has no command buttons: after the browser grants microphone permission, it continuously listens and speaks replies. `/chat` remains available as a text fallback. The browser uses relative API URLs, so it also works through a LAN or hosted preview. Without a provider key, chat uses a local mock response. Screen vision and projector demos need a machine with the relevant camera/display permissions. Browser security still requires a one-time microphone permission; this cannot be bypassed by web code.
 
 ## Optional configuration
 
